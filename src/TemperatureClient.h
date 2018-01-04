@@ -6,8 +6,8 @@
 #define TEMP_SENSOR_TYPE DHT22
 
 #include <Arduino.h>
-#include "DHT.h"
-#include "MqttClient.h"
+#include <DHT.h>
+#include <MqttClient.h>
 
 
 class TemperatureClient {

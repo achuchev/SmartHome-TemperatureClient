@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ArduinoOTA.h>
-#include <Common.h>
+#include <CommonConfig.h>
 #include <MqttClient.h>
 #include <RemotePrint.h>
 #include <DHT.h>
