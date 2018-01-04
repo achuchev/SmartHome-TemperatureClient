@@ -18,8 +18,6 @@ void TemperatureClient::init(const char *deviceName,
   this->lastTemperatureStatusMsgSentAt = 0;
   this->mqttClient                     = mqttClient;
   this->mqttTopic                      = mqttTopic;
-
-  RemotePrint::instance(deviceName);
 }
 
 void TemperatureClient::publishStatus(const char *messageId,
