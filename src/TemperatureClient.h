@@ -17,7 +17,8 @@ public:
             uint8_t     sensorPin,
             uint8_t     sensorType,
             MqttClient *mqttClient,
-            const char *mqttTopic);
+            const char *mqttTopic,
+            float       correctionTemperature = 0.0);
 
   void publishStatus(const char *messageId,
                      bool        forcePublish);
@@ -28,6 +29,7 @@ private:
   uint8_t sensorPin;
   uint8_t sensorType;
   long lastTemperatureStatusMsgSentAt;
+  float correctionTemperature;
   MqttClient *mqttClient;
   const char *mqttTopic;
 };

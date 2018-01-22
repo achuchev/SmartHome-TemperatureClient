@@ -12,12 +12,14 @@ void TemperatureClient::init(const char *deviceName,
                              uint8_t     sensorPin,
                              uint8_t     sensorType,
                              MqttClient *mqttClient,
-                             const char *mqttTopic) {
+                             const char *mqttTopic,
+                             float       correctionTemperature) {
   this->sensorPin                      = sensorPin;
   this->sensorType                     = sensorType;
   this->lastTemperatureStatusMsgSentAt = 0;
   this->mqttClient                     = mqttClient;
   this->mqttTopic                      = mqttTopic;
+  this->correctionTemperature          = correctionTemperature;
 }
 
 void TemperatureClient::publishStatus(const char *messageId,
@@ -29,22 +31,34 @@ void TemperatureClient::publishStatus(const char *messageId,
     this->lastTemperatureStatusMsgSentAt = now;
 
     // Reading temperature or humidity takes about 250 milliseconds!
-    DHT   dht(this->sensorPin, this->sensorType);
-    float humidity = dht.readHumidity();
+    DHT dht(this->sensorPin, this->sensorType);
 
-    // Read temperature as Celsius (the default)
-    float temperature = dht.readTemperature();
+    float humidity    = 0.0;
+    float temperature = 0.0;
+    byte  retryCount  = 5;
 
-    // Check if any reads failed and exit early (to try again).
-    if (isnan(humidity) || isnan(temperature)) {
-      PRINTLN("TEMPERATURE: Failed to read from DHT sensor!");
+    while (retryCount > 0) {
+      humidity = dht.readHumidity();
+
+      // Read temperature as Celsius (the default)
+      temperature = dht.readTemperature();
+
+      if (isnan(humidity) || isnan(temperature)) {
+        --retryCount;
+      }
+    }
+
+    if ((temperature == 0.0) || (humidity == 0.0)) {
+      PRINTLN_E("TEMPERATURE: Failed to read from DHT sensor!");
+
+      // Check if any reads failed and exit early (to try again).
       this->lastTemperatureStatusMsgSentAt = 0;
       return;
     }
+    temperature = temperature + correctionTemperature;
 
     // Compute heat index in Celsius (isFahreheit = false)
     float heatIndex = dht.computeHeatIndex(temperature, heatIndex, false);
-
 
     const size_t bufferSize = JSON_OBJECT_SIZE(3);
     DynamicJsonBuffer jsonBuffer(bufferSize);
