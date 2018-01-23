@@ -33,29 +33,24 @@ void TemperatureClient::publishStatus(const char *messageId,
     // Reading temperature or humidity takes about 250 milliseconds!
     DHT dht(this->sensorPin, this->sensorType);
 
-    float humidity    = 0.0;
-    float temperature = 0.0;
-    byte  retryCount  = 5;
+    float humidity = dht.readHumidity();
 
-    while (retryCount > 0) {
-      humidity = dht.readHumidity();
+    // Read temperature as Celsius (the default)
+    float temperature = dht.readTemperature();
 
-      // Read temperature as Celsius (the default)
-      temperature = dht.readTemperature();
+    if (isnan(humidity) || isnan(temperature)) {
+      this->errosCount++;
 
-      if (isnan(humidity) || isnan(temperature)) {
-        --retryCount;
+      if (this->errosCount >= 10) {
+        PRINTLN_E("TEMPERATURE: Failed to read from DHT sensor!");
       }
-    }
-
-    if ((temperature == 0.0) || (humidity == 0.0)) {
-      PRINTLN_E("TEMPERATURE: Failed to read from DHT sensor!");
 
       // Check if any reads failed and exit early (to try again).
       this->lastTemperatureStatusMsgSentAt = 0;
       return;
     }
-    temperature = temperature + correctionTemperature;
+    this->errosCount = 0;
+    temperature      = temperature + correctionTemperature;
 
     // Compute heat index in Celsius (isFahreheit = false)
     float heatIndex = dht.computeHeatIndex(temperature, heatIndex, false);

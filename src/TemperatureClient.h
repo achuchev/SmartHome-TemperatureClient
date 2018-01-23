@@ -32,6 +32,7 @@ private:
   float correctionTemperature;
   MqttClient *mqttClient;
   const char *mqttTopic;
+  byte errosCount = 0;
 };
 
 #endif // ifndef TEMPERATURE_CLIENT_H
