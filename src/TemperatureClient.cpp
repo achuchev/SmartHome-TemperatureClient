@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ArduinoOTA.h>
-#include <CommonConfig.h>
 #include <MqttClient.h>
 #include <RemotePrint.h>
 #include <DHT.h>
@@ -71,7 +70,6 @@ void TemperatureClient::publishStatus(const char *messageId,
     // convert to String
     String outString;
     root.printTo(outString);
-
 
     // publish the message
     this->mqttClient->publish(this->mqttTopic, outString);
