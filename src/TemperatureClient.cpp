@@ -83,7 +83,7 @@ float TemperatureClient::getHumidity() {
 
   do {
     humidity = dht.readHumidity();
-  } while (isnan(humidity) || attemptsCount > 0);
+  } while (isnan(humidity) && attemptsCount > 0);
 
   if (humidity == 0.0) {
     lastHumidity = humidity;
