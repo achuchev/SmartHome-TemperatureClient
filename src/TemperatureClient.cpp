@@ -76,6 +76,21 @@ void TemperatureClient::publishStatus(const char *messageId,
   }
 }
 
+float TemperatureClient::getHumidity() {
+  float humidity      = 0.0;
+  byte  attemptsCount = 10;
+  DHT   dht(this->sensorPin, this->sensorType);
+
+  do {
+    humidity = dht.readHumidity();
+  } while (isnan(humidity) || attemptsCount > 0);
+
+  if (humidity == 0.0) {
+    lastHumidity = humidity;
+  }
+  return lastHumidity;
+}
+
 void TemperatureClient::loop() {
   publishStatus(NULL, false);
   RemotePrint::instance()->handle();

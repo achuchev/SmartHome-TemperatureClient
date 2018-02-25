@@ -18,9 +18,11 @@ public:
             const char *mqttTopic,
             float       correctionTemperature = 0.0);
 
-  void publishStatus(const char *messageId,
-                     bool        forcePublish);
-  void loop();
+  void  publishStatus(const char *messageId,
+                      bool        forcePublish);
+
+  float getHumidity();
+  void  loop();
 
 private:
 
@@ -30,7 +32,8 @@ private:
   float correctionTemperature;
   MqttClient *mqttClient;
   const char *mqttTopic;
-  byte errosCount = 0;
+  byte errosCount    = 0;
+  float lastHumidity = 0.0;
 };
 
 #endif // ifndef TEMPERATURE_CLIENT_H
