@@ -2,8 +2,6 @@
 #define TEMPERATURE_CLIENT_H
 
 #define MQTT_PUBLISH_TEMPERATURE_INTERVAL 30000 // 30 sec
-#define PIN_TEMP D3                             // DHT 22 PIN
-#define TEMP_SENSOR_TYPE DHT22
 
 #include <Arduino.h>
 #include <DHT.h>
