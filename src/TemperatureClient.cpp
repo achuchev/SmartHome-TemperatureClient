@@ -55,10 +55,9 @@ void TemperatureClient::publishStatus(const char *messageId,
     float heatIndex = dht.computeHeatIndex(temperature, heatIndex, false);
 
     const size_t bufferSize = JSON_OBJECT_SIZE(3);
-    DynamicJsonBuffer jsonBuffer(bufferSize);
+    DynamicJsonDocument root(bufferSize);
 
-    JsonObject& root   = jsonBuffer.createObject();
-    JsonObject& status = root.createNestedObject("status");
+    JsonObject status = root.createNestedObject("status");
     status["temperature"] = temperature;
     status["humidity"]    = humidity;
     status["heatIndex"]   = heatIndex;
@@ -69,7 +68,7 @@ void TemperatureClient::publishStatus(const char *messageId,
 
     // convert to String
     String outString;
-    root.printTo(outString);
+    serializeJson(root, outString);
 
     // publish the message
     this->mqttClient->publish(this->mqttTopic, outString);
