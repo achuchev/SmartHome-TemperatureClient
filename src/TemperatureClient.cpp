@@ -52,7 +52,8 @@ void TemperatureClient::publishStatus(const char *messageId,
     temperature      = temperature + correctionTemperature;
 
     // Compute heat index in Celsius (isFahreheit = false)
-    float heatIndex = dht.computeHeatIndex(temperature, heatIndex, false);
+    float heatIndex = 0.0;
+    heatIndex = dht.computeHeatIndex(temperature, heatIndex, false);
 
     const size_t bufferSize = JSON_OBJECT_SIZE(3);
     DynamicJsonDocument root(bufferSize);
