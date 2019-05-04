@@ -56,7 +56,7 @@ void TemperatureClient::publishStatus(const char *messageId,
     float heatIndex = 0.0;
     heatIndex = dht.computeHeatIndex(temperature, heatIndex, false);
 
-    const size_t bufferSize = JSON_OBJECT_SIZE(3);
+    const size_t bufferSize = 2 * JSON_OBJECT_SIZE(2);
     DynamicJsonDocument root(bufferSize);
 
     JsonObject status = root.createNestedObject("status");
