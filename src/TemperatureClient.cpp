@@ -45,7 +45,8 @@ void TemperatureClient::publishStatus(const char *messageId,
       }
 
       // Check if any reads failed and exit early (to try again).
-      this->lastTemperatureStatusMsgSentAt = 0;
+      // Don't set the lastTemperatureStatusMsgSentAt to 0 as it will overload the DHT sensor.
+      // this->lastTemperatureStatusMsgSentAt = 0;
       return;
     }
     this->errosCount = 0;
