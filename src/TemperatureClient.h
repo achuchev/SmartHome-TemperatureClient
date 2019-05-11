@@ -4,7 +4,9 @@
 #define MQTT_PUBLISH_TEMPERATURE_INTERVAL 30000 // 30 sec
 
 #include <Arduino.h>
+#include <Adafruit_Sensor.h>
 #include <DHT.h>
+#include <DHT_U.h>
 #include <MqttClient.h>
 
 
@@ -28,12 +30,14 @@ private:
 
   uint8_t sensorPin;
   uint8_t sensorType;
-  long lastTemperatureStatusMsgSentAt;
+  unsigned long lastTemperatureStatusMsgSentAt;
   float correctionTemperature;
   MqttClient *mqttClient;
   const char *mqttTopic;
-  byte errosCount    = 0;
-  float lastHumidity = 0.0;
+  byte errosCount                  = 0;
+  float lastHumidity               = 0.0;
+  unsigned long sensorLastReadTime = 0;
+  unsigned long sensorMinDelay     = 0;
 };
 
 #endif // ifndef TEMPERATURE_CLIENT_H

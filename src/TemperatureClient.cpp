@@ -16,6 +16,8 @@ void TemperatureClient::init(const char *deviceName,
   this->sensorPin                      = sensorPin;
   this->sensorType                     = sensorType;
   this->lastTemperatureStatusMsgSentAt = 0;
+  this->lastHumidity                   = 0.0;
+  this->errosCount                     = 0;
   this->mqttClient                     = mqttClient;
   this->mqttTopic                      = mqttTopic;
   this->correctionTemperature          = correctionTemperature;
@@ -23,38 +25,35 @@ void TemperatureClient::init(const char *deviceName,
 
 void TemperatureClient::publishStatus(const char *messageId,
                                       bool        forcePublish) {
-  long now = millis();
+  unsigned long now = millis();
 
-  if ((forcePublish) or (now - this->lastTemperatureStatusMsgSentAt >
+  if ((forcePublish) || (now - this->lastTemperatureStatusMsgSentAt >
                          MQTT_PUBLISH_TEMPERATURE_INTERVAL)) {
-    this->lastTemperatureStatusMsgSentAt = now;
-
-    // Reading temperature or humidity takes about 250 milliseconds!
-    DHT dht(this->sensorPin, this->sensorType);
-
-    float humidity = dht.readHumidity();
-
-    // Read temperature as Celsius (the default)
-    float temperature = dht.readTemperature();
-
-    if (isnan(humidity) || isnan(temperature)) {
-      this->errosCount++;
-
-      if (this->errosCount >= 10) {
-        PRINTLN_E("TEMPERATURE: Failed to read from DHT sensor!");
-      }
-
-      // Check if any reads failed and exit early (to try again).
-      // Don't set the lastTemperatureStatusMsgSentAt to 0 as it will overload the DHT sensor.
-      // this->lastTemperatureStatusMsgSentAt = 0;
+    if (now < (this->sensorLastReadTime + this->sensorMinDelay)) {
+      // It's not time to read the sensor
+      PRINTLN_D("TEMPERATURE: It's too early to read the sensor!");
       return;
     }
-    this->errosCount = 0;
-    temperature      = temperature + correctionTemperature;
 
-    // Compute heat index in Celsius (isFahreheit = false)
-    float heatIndex = 0.0;
-    heatIndex = dht.computeHeatIndex(temperature, heatIndex, false);
+    DHT_Unified dht(this->sensorPin, this->sensorType);
+    sensors_event_t eventTemperature;
+    sensors_event_t eventHumidity;
+    float humidity    = 0.0;
+    float temperature = 0.0;
+
+    dht.begin();
+    dht.temperature().getEvent(&eventTemperature);
+    dht.humidity().getEvent(&eventHumidity);
+    humidity    =  eventHumidity.relative_humidity;
+    temperature = eventTemperature.temperature;
+
+    if (isnan(humidity) || isnan(temperature)) {
+      PRINTLN_E("TEMPERATURE: Failed to read the sensor!");
+      return;
+    }
+
+    this->sensorLastReadTime = millis();
+    temperature              = temperature + correctionTemperature;
 
     const size_t bufferSize = 2 * JSON_OBJECT_SIZE(2);
     DynamicJsonDocument root(bufferSize);
@@ -62,7 +61,7 @@ void TemperatureClient::publishStatus(const char *messageId,
     JsonObject status = root.createNestedObject("status");
     status["temperature"] = temperature;
     status["humidity"]    = humidity;
-    status["heatIndex"]   = heatIndex;
+    status["heatIndex"]   = temperature;
 
     if (messageId != NULL) {
       root["messageId"] = messageId;
@@ -72,28 +71,35 @@ void TemperatureClient::publishStatus(const char *messageId,
     String outString;
     serializeJson(root, outString);
 
+    this->lastTemperatureStatusMsgSentAt = millis();
+
     // publish the message
     this->mqttClient->publish(this->mqttTopic, outString);
   }
 }
 
 float TemperatureClient::getHumidity() {
-  float humidity      = 0.0;
-  byte  attemptsCount = 10;
-  DHT   dht(this->sensorPin, this->sensorType);
+  if (millis() < (this->sensorLastReadTime + this->sensorMinDelay)) {
+    // It's not time to read the sensor
+    return this->lastHumidity;
+  }
 
-  do {
-    humidity = dht.readHumidity();
+  DHT_Unified dht(this->sensorPin, this->sensorType);
+  sensors_event_t eventHumidity;
+  float humidity = 0.0;
 
-    if (!isnan(humidity)) {
-      lastHumidity = humidity;
-      return lastHumidity;
-    }
-    --attemptsCount;
-  } while (attemptsCount > 0);
+  dht.begin();
+  dht.humidity().getEvent(&eventHumidity);
+  humidity =  eventHumidity.relative_humidity;
+
+  if (!isnan(humidity)) {
+    this->sensorLastReadTime = millis();
+    this->lastHumidity       = humidity;
+    return humidity;
+  }
 
   // return the old value
-  return lastHumidity;
+  return this->lastHumidity;
 }
 
 void TemperatureClient::loop() {
